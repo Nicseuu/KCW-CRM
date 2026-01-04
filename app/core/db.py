@@ -8,16 +8,19 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
+_engine: Optional[Engine] = None
+SessionLocal: sessionmaker | None = None
+
 
 def get_engine() -> Engine:
     """
-    Lazily create the engine only when actually needed.
-    This prevents import-time crashes when DATABASE_URL isn't set.
+    Create the engine only when actually needed.
+    This avoids import-time crashes and gives clearer runtime errors.
     """
     if not settings.DATABASE_URL:
         raise RuntimeError(
             "DATABASE_URL is not set. "
-            "Set DATABASE_URL in your Railway service Variables (API/Worker/Beat)."
+            "Set DATABASE_URL in your Railway service Variables."
         )
 
     return create_engine(
@@ -26,12 +29,10 @@ def get_engine() -> Engine:
     )
 
 
-# These are created lazily so importing app doesn't crash.
-_engine: Optional[Engine] = None
-SessionLocal: sessionmaker | None = None
-
-
 def init_db() -> None:
+    """
+    Initialize SessionLocal lazily.
+    """
     global _engine, SessionLocal
     if SessionLocal is not None:
         return
