@@ -7,10 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """
     Loads settings from environment variables (Railway Variables),
-    and from .env locally for development.
+    and optionally from a local .env for development.
 
-    DATABASE_URL and REDIS_URL are optional so the app can boot and expose /health
-    even before Railway variables are configured.
+    DATABASE_URL and REDIS_URL are optional so the API can boot and expose /health
+    even if Railway variables aren't configured yet.
     """
     model_config = SettingsConfigDict(
         env_file=".env",
