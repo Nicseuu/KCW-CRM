@@ -5,16 +5,19 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
-# SQLAlchemy Engine
+
+if not settings.DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Set DATABASE_URL in your Railway service variables."
+    )
+
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
 )
 
-# Session factory
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
     autocommit=False,
 )
-
