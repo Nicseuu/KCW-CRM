@@ -5,13 +5,13 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models.excel import ExcelInventoryFile  # ensures model import works
+from app.models.excel import ExcelInventoryFile  # ensures model import is valid
 
 router = APIRouter()
 
 
 @router.get("/ping")
 def excel_ping(db: Session = Depends(get_db)):
-    # simple DB test query so you can confirm DATABASE_URL works
+    # If DATABASE_URL is configured, this verifies DB connectivity
     db.execute(text("SELECT 1"))
     return {"ok": True, "model_loaded": ExcelInventoryFile.__tablename__}
