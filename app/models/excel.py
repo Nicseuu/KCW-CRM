@@ -11,9 +11,6 @@ from app.models.base import Base
 
 
 class InventoryFileSource(Base):
-    """
-    Tracks where inventory files come from (manual upload, shared drive polling, etc.).
-    """
     __tablename__ = "inventory_file_source"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -21,8 +18,7 @@ class InventoryFileSource(Base):
     # e.g. "manual_upload", "shared_drive_poll"
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    # JSON config for source behavior (path, schedule, credentials ref, etc.)
-    # IMPORTANT: Must be a JSON/JSONB column, not just Mapped[dict] alone.
+    # JSON config for source behavior (path, schedule, etc.)
     config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
@@ -48,9 +44,6 @@ class InventoryFileSource(Base):
 
 
 class ExcelInventoryFile(Base):
-    """
-    Represents a particular Excel inventory file import/upload record.
-    """
     __tablename__ = "excel_inventory_file"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
