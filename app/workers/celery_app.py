@@ -3,6 +3,12 @@ from __future__ import annotations
 from celery import Celery
 from app.core.config import settings
 
+
+if not settings.REDIS_URL:
+    raise RuntimeError(
+        "REDIS_URL is not set. Set REDIS_URL in your Railway service variables."
+    )
+
 celery_app = Celery(
     "ecom_crm",
     broker=settings.REDIS_URL,
