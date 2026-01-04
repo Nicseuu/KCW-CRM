@@ -1,55 +1,74 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import BigInteger, Text, ForeignKey, TIMESTAMP, func
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base
 
 
 class InventoryFileSource(Base):
+    """
+    Tracks where inventory files come from (manual upload, shared drive polling, etc.).
+    """
     __tablename__ = "inventory_file_source"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    org_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("org.id", ondelete="CASCADE"), index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    source_type: Mapped[str] = mapped_column(Text, nullable=False)  # MANUAL_UPLOAD/GOOGLE_DRIVE/ONEDRIVE/S3_COMPAT
-    display_name: Mapped[str] = mapped_column(Text, nullable=False)
-    config: Mapped[dict] = mapped_column(default=dict)
+    # e.g. "manual_upload", "shared_drive_poll"
+    source_type: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    is_enabled: Mapped[bool] = mapped_column(default=True)
-    poll_minutes: Mapped[int | None] = mapped_column(default=None)
-    last_poll_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True))
+    # JSON config for source behavior (path, schedule, credentials ref, etc.)
+    # IMPORTANT: Must be a JSON/JSONB column, not just Mapped[dict] alone.
+    config: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+    )
 
-    created_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-    updated_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    files: Mapped[list["ExcelInventoryFile"]] = relationship(
+        back_populates="source",
+        cascade="all, delete-orphan",
+    )
 
 
 class ExcelInventoryFile(Base):
+    """
+    Represents a particular Excel inventory file import/upload record.
+    """
     __tablename__ = "excel_inventory_file"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    org_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("org.id", ondelete="CASCADE"), index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    source_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("inventory_file_source.id", ondelete="SET NULL"))
-    filename: Mapped[str] = mapped_column(Text, nullable=False)
-    content_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    source_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("inventory_file_source.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
-    remote_file_id: Mapped[str | None] = mapped_column(Text)
-    remote_modified_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True))
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    checksum: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    status: Mapped[str] = mapped_column(Text, default="UPLOADED", nullable=False)  # UPLOADED/PROCESSED/FAILED
-    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
 
-    uploaded_at: Mapped[object] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-    processed_at: Mapped[object | None] = mapped_column(TIMESTAMP(timezone=True))
-
-
-class ExcelInventoryRow(Base):
-    __tablename__ = "excel_inventory_row"
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    excel_file_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("excel_inventory_file.id", ondelete="CASCADE"), index=True)
-
-    sku: Mapped[str] = mapped_column(Text, nullable=False)
-    product_name: Mapped[str | None] = mapped_column(Text)
-    total_stock: Mapped[int | None] = mapped_column(BigInteger)
-    raw: Mapped[dict] = mapped_column(default=dict)
+    source: Mapped[InventoryFileSource | None] = relationship(back_populates="files")
