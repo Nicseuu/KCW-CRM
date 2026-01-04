@@ -1,19 +1,26 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.excel import router as excel_router
 from app.core.config import settings
 
 app = FastAPI(title="Ecom CRM")
 
+# For internal admin UI, you can start permissive, then restrict to your Vercel/Railway frontend domain.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 def root():
-    return {
-        "message": "API is running",
-        "try": ["/health", "/docs", "/excel/ping"],
-    }
+    return {"message": "API is running", "try": ["/health", "/docs", "/excel/ping"]}
 
 
 @app.get("/health")
