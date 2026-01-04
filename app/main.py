@@ -8,6 +8,14 @@ from app.core.config import settings
 app = FastAPI(title="Ecom CRM")
 
 
+@app.get("/")
+def root():
+    return {
+        "message": "API is running",
+        "try": ["/health", "/docs", "/excel/ping"],
+    }
+
+
 @app.get("/health")
 def health():
     return {
