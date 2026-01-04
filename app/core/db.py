@@ -14,13 +14,11 @@ SessionLocal: sessionmaker | None = None
 
 def get_engine() -> Engine:
     """
-    Create the engine only when actually needed.
-    This avoids import-time crashes and gives clearer runtime errors.
+    Lazy engine creation to avoid import-time crashes.
     """
     if not settings.DATABASE_URL:
         raise RuntimeError(
-            "DATABASE_URL is not set. "
-            "Set DATABASE_URL in your Railway service Variables."
+            "DATABASE_URL is not set. Set DATABASE_URL in Railway Variables."
         )
 
     return create_engine(
@@ -31,7 +29,7 @@ def get_engine() -> Engine:
 
 def init_db() -> None:
     """
-    Initialize SessionLocal lazily.
+    Initialize SessionLocal lazily on first use.
     """
     global _engine, SessionLocal
     if SessionLocal is not None:
