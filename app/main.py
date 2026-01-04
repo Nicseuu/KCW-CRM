@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from app.api.routes.excel import router as excel_router
 from app.core.config import settings
-
-# Your routers (keep these if they exist)
-from app.api.routes.excel import router as excel_router  # noqa: E402
-
 
 app = FastAPI(title="Ecom CRM")
 
@@ -19,8 +16,8 @@ def health():
         "database_configured": bool(settings.DATABASE_URL),
         "redis_configured": bool(settings.REDIS_URL),
         "missing": [
-            name
-            for name, ok in {
+            k
+            for k, ok in {
                 "DATABASE_URL": bool(settings.DATABASE_URL),
                 "REDIS_URL": bool(settings.REDIS_URL),
             }.items()
