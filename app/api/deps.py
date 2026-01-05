@@ -5,18 +5,23 @@ from typing import Generator
 
 from sqlalchemy.orm import Session
 
-from app.core.db import SessionLocal, init_db
+import app.core.db as db
 
 
 def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency that yields a DB session.
-    """
-    init_db()
-    assert SessionLocal is not None, "DB not initialized (SessionLocal is None)."
 
-    db: Session = SessionLocal()
+    Important: import the db module, not SessionLocal by value,
+    so we always see the updated SessionLocal after init_db().
+    """
+    db.init_db()
+
+    if db.SessionLocal is None:
+        raise RuntimeError("DB not initialized (SessionLocal is None).")
+
+    session: Session = db.SessionLocal()
     try:
-        yield db
+        yield session
     finally:
-        db.close()
+        session.close()
