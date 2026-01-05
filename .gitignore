@@ -1,48 +1,13 @@
 cat > .gitignore <<'EOF'
-# =========================
-# Node / Next.js
-# =========================
 node_modules/
 .next/
 out/
 dist/
-
-# Env files (DO NOT COMMIT)
 .env
 .env.local
 .env.*.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# OS junk
 .DS_Store
-Thumbs.db
-
-# =========================
-# Python (backend)
-# =========================
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
 .venv/
-venv/
-ENV/
-env/
-
-# Alembic / tooling caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-# =========================
-# Editors
-# =========================
-.vscode/
-.idea/
 EOF
