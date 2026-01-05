@@ -1,3 +1,4 @@
+# app/api/deps.py
 from __future__ import annotations
 
 from typing import Generator
@@ -8,8 +9,11 @@ from app.core.db import SessionLocal, init_db
 
 
 def get_db() -> Generator[Session, None, None]:
+    """
+    FastAPI dependency that yields a DB session.
+    """
     init_db()
-    assert SessionLocal is not None
+    assert SessionLocal is not None, "DB not initialized (SessionLocal is None)."
 
     db: Session = SessionLocal()
     try:
