@@ -33,31 +33,28 @@ def make_celery() -> Celery:
 
     default_queue = os.getenv("CELERY_QUEUE", "celery")
 
-    # Schedules (minutes) - adjustable via Railway env vars
     pull_orders_every_min = _int_env("PULL_ORDERS_EVERY_MIN", 2)
     sync_excel_every_min = _int_env("SYNC_EXCEL_EVERY_MIN", 5)
     reconcile_every_min = _int_env("RECONCILE_STOCK_EVERY_MIN", 5)
     push_stock_every_min = _int_env("PUSH_STOCK_EVERY_MIN", 2)
 
+    # Force Beat schedule DB location/name (avoids stale schedule issues)
+    beat_schedule_filename = os.getenv("CELERY_BEAT_SCHEDULE_FILE", "celerybeat-schedule")
+
     celery_app.conf.update(
-        # Celery 6+ startup retry deprecation fix
         broker_connection_retry_on_startup=True,
-        # JSON everywhere
         task_serializer="json",
         accept_content=["json"],
         result_serializer="json",
-        # Ensure Beat + Worker use the same queue
         task_default_queue=default_queue,
         task_default_exchange=default_queue,
         task_default_routing_key=default_queue,
-        # Operational defaults
         timezone=os.getenv("CELERY_TIMEZONE", "UTC"),
         enable_utc=True,
         task_track_started=True,
         worker_prefetch_multiplier=_int_env("CELERY_PREFETCH_MULTIPLIER", 1),
-        # Schedules
+        beat_schedule_filename=beat_schedule_filename,
         beat_schedule={
-            # ---- Pull orders ----
             "pull-orders-tiktok": {
                 "task": "app.workers.tasks.pull_orders_tiktok",
                 "schedule": float(pull_orders_every_min * 60),
@@ -73,13 +70,11 @@ def make_celery() -> Celery:
                 "schedule": float(pull_orders_every_min * 60),
                 "options": {"queue": default_queue},
             },
-            # ---- Excel -> DB inventory sync ----
             "sync-excel-inventory-to-db": {
                 "task": "app.workers.tasks.sync_excel_inventory_to_db",
                 "schedule": float(sync_excel_every_min * 60),
                 "options": {"queue": default_queue},
             },
-            # ---- Reconcile + push stock ----
             "reconcile-stock": {
                 "task": "app.workers.tasks.reconcile_stock",
                 "schedule": float(reconcile_every_min * 60),
