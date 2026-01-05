@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+<<<<<<< HEAD
     "next": "14.2.24",
     "react": "^18",
     "react-dom": "^18"
@@ -17,5 +18,15 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "typescript": "^5.0.0"
+=======
+    "next": "^16.1.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "25.0.3",
+    "@types/react": "19.2.7",
+    "typescript": "5.9.3"
+>>>>>>> 26a0190 (Upgrade Next.js)
   }
 }
