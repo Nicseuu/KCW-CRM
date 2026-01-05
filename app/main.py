@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.excel import router as excel_router
 from app.core.config import settings
 
-app = FastAPI(title="Ecom CRM")
+app = FastAPI(title="KCW CRM")
 
 # For internal admin UI, you can start permissive, then restrict to your Vercel/Railway frontend domain.
 app.add_middleware(
