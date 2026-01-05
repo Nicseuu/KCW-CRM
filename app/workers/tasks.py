@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 @shared_task(name="app.workers.tasks.heartbeat")
 def heartbeat() -> str:
     """
-    Beat should enqueue this, worker should run it.
-    Check worker logs for: "HEARTBEAT task executed"
+    Optional monitoring task. Enable scheduling in celery_app.py if you want it.
     """
     logger.warning("HEARTBEAT task executed")
     time.sleep(1)
