@@ -1,20 +1,12 @@
+// app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 
-type Health = {
-  status?: string;
-  env?: string;
-  database_configured?: boolean;
-  redis_configured?: boolean;
-  missing?: string[];
-  detail?: string;
-};
-
 export default function Page() {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const [health, setHealth] = useState<Health | null>(null);
+  const [health, setHealth] = useState<any>(null);
   const [excelPing, setExcelPing] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -26,8 +18,6 @@ export default function Page() {
 
     (async () => {
       try {
-        setErr(null);
-
         const h = await fetch(`${apiBase}/health`, { cache: "no-store" });
         setHealth(await h.json());
 
@@ -39,63 +29,28 @@ export default function Page() {
     })();
   }, [apiBase]);
 
-  const badge = (ok: boolean | undefined, warn = false) => {
-    if (ok === true) return <span className="badge good">OK</span>;
-    if (warn) return <span className="badge warn">CHECK</span>;
-    return <span className="badge bad">NOT OK</span>;
-  };
-
   return (
-    <main className="grid">
-      <section className="card">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontWeight: 700 }}>Backend connectivity</div>
-            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-              API Base URL: <code>{apiBase ?? "(not set)"}</code>
-            </div>
-          </div>
-          {badge(Boolean(apiBase), true)}
-        </div>
+    <main style={{ fontFamily: "system-ui", padding: 24 }}>
+      <h1>KCW CRM Admin Dashboard</h1>
+      <p>
+        API Base: <code>{apiBase ?? "(not set)"}</code>
+      </p>
 
-        {err && (
-          <pre>
-            <code>Error: {err}</code>
-          </pre>
-        )}
-      </section>
-
-      <section className="card">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontWeight: 700 }}>/health</div>
-            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-              Shows if env vars like DATABASE_URL are configured
-            </div>
-          </div>
-          {badge(health?.status === "ok", true)}
-        </div>
-
+      {err && (
         <pre>
-          <code>{JSON.stringify(health, null, 2)}</code>
+          <code>{err}</code>
         </pre>
-      </section>
+      )}
 
-      <section className="card">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontWeight: 700 }}>/excel/ping</div>
-            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>
-              Tests database connectivity
-            </div>
-          </div>
-          {badge(excelPing?.ok === true, true)}
-        </div>
+      <h2>/health</h2>
+      <pre>
+        <code>{JSON.stringify(health, null, 2)}</code>
+      </pre>
 
-        <pre>
-          <code>{JSON.stringify(excelPing, null, 2)}</code>
-        </pre>
-      </section>
+      <h2>/excel/ping</h2>
+      <pre>
+        <code>{JSON.stringify(excelPing, null, 2)}</code>
+      </pre>
     </main>
   );
 }
