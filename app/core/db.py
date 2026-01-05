@@ -1,112 +1,73 @@
 # app/core/db.py
 from __future__ import annotations
 
-import os
-from contextlib import contextmanager
-from typing import Generator, Optional
+from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
+
+from app.core.config import settings
 
 _engine: Optional[Engine] = None
-SessionLocal: Optional[sessionmaker] = None
+SessionLocal: sessionmaker | None = None
 
 
-def _build_sqlalchemy_database_url(raw_url: str) -> str:
+def _sqlalchemy_url_for_psycopg(raw_url: str) -> str:
     """
+    Force SQLAlchemy to use Psycopg v3 driver.
+
     Railway commonly provides:
       - postgresql://...
       - postgres://...
 
-    SQLAlchemy needs the driver explicitly to use psycopg v3:
+    SQLAlchemy w/ psycopg v3 should be:
       - postgresql+psycopg://...
     """
-    url = raw_url.strip()
+    url = (raw_url or "").strip()
 
     if url.startswith("postgresql+psycopg://"):
         return url
-
     if url.startswith("postgresql://"):
         return url.replace("postgresql://", "postgresql+psycopg://", 1)
-
     if url.startswith("postgres://"):
         return url.replace("postgres://", "postgresql+psycopg://", 1)
 
-    # If you use something else (sqlite, etc.), keep as-is
     return url
 
 
 def get_engine() -> Engine:
     """
-    Lazy-create the SQLAlchemy Engine so imports don't crash the app.
+    Lazy engine creation to avoid import-time crashes.
     """
     global _engine
 
     if _engine is not None:
         return _engine
 
-    raw_db_url = os.getenv("DATABASE_URL", "")
-    if not raw_db_url:
-        raise RuntimeError("DATABASE_URL is not set in environment variables.")
+    if not getattr(settings, "DATABASE_URL", None):
+        raise RuntimeError("DATABASE_URL is not set. Set it in Railway Variables.")
 
-    db_url = _build_sqlalchemy_database_url(raw_db_url)
+    db_url = _sqlalchemy_url_for_psycopg(settings.DATABASE_URL)
 
     _engine = create_engine(
         db_url,
         pool_pre_ping=True,
-        future=True,
     )
     return _engine
 
 
-def get_sessionmaker() -> sessionmaker:
+def init_db() -> None:
     """
-    Lazy-create the sessionmaker.
+    Initialize SessionLocal once.
+
+    This function exists because your code imports:
+      from app.core.db import SessionLocal, init_db
     """
     global SessionLocal
 
     if SessionLocal is not None:
-        return SessionLocal
+        return
 
     engine = get_engine()
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    return SessionLocal
-
-
-@contextmanager
-def session_scope() -> Generator[Session, None, None]:
-    """
-    Context manager for scripts/CLI usage.
-    """
-    SessionLocal_ = get_sessionmaker()
-    db: Session = SessionLocal_()
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-
-def get_db() -> Generator[Session, None, None]:
-    """
-    FastAPI dependency.
-
-    Usage:
-        from fastapi import Depends
-        from sqlalchemy.orm import Session
-        from app.core.db import get_db
-
-        @router.get("/something")
-        def route(db: Session = Depends(get_db)):
-            ...
-    """
-    SessionLocal_ = get_sessionmaker()
-    db: Session = SessionLocal_()
-    try:
-        yield db
-    finally:
-        db.close()
