@@ -19,25 +19,38 @@ def make_celery() -> Celery:
         broker=redis_url,
         backend=redis_url,
         include=[
-            "app.workers.tasks",  # ensure tasks are registered
+            "app.workers.tasks",
         ],
     )
 
+    default_queue = os.getenv("CELERY_QUEUE", "celery")
+
     celery_app.conf.update(
-        # Celery 6+ deprecation warning fix:
+        # Fix Celery 6+ startup retry deprecation warning
         broker_connection_retry_on_startup=True,
 
-        # Recommended operational defaults:
+        # Serialization (safe defaults)
+        task_serializer="json",
+        accept_content=["json"],
+        result_serializer="json",
+
+        # Queue defaults (ensures Beat + Worker use the same queue)
+        task_default_queue=default_queue,
+        task_default_exchange=default_queue,
+        task_default_routing_key=default_queue,
+
+        # Operational defaults
         timezone=os.getenv("CELERY_TIMEZONE", "UTC"),
         enable_utc=True,
         task_track_started=True,
         worker_prefetch_multiplier=int(os.getenv("CELERY_PREFETCH_MULTIPLIER", "1")),
 
-        # Beat schedule (proof-of-life task every 30 seconds)
+        # Proof-of-life schedule
         beat_schedule={
             "heartbeat-every-30-seconds": {
                 "task": "app.workers.tasks.heartbeat",
                 "schedule": 30.0,
+                "options": {"queue": default_queue},
             }
         },
     )
