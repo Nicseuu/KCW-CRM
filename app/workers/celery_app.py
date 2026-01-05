@@ -25,16 +25,27 @@ def make_celery() -> Celery:
 
     default_queue = os.getenv("CELERY_QUEUE", "celery")
 
+    # IMPORTANT:
+    # Set your real schedules here. Heartbeat is off by default in production.
+    beat_schedule = {}
+
+    # If you still want a heartbeat in production, uncomment this:
+    # beat_schedule["heartbeat-every-10-minutes"] = {
+    #     "task": "app.workers.tasks.heartbeat",
+    #     "schedule": 600.0,
+    #     "options": {"queue": default_queue},
+    # }
+
     celery_app.conf.update(
-        # Fix Celery 6+ startup retry deprecation warning
+        # Future-proof for Celery 6+
         broker_connection_retry_on_startup=True,
 
-        # Serialization (safe defaults)
+        # JSON everywhere
         task_serializer="json",
         accept_content=["json"],
         result_serializer="json",
 
-        # Queue defaults (ensures Beat + Worker use the same queue)
+        # Ensure Beat + Worker use same queue by default
         task_default_queue=default_queue,
         task_default_exchange=default_queue,
         task_default_routing_key=default_queue,
@@ -45,14 +56,8 @@ def make_celery() -> Celery:
         task_track_started=True,
         worker_prefetch_multiplier=int(os.getenv("CELERY_PREFETCH_MULTIPLIER", "1")),
 
-        # Proof-of-life schedule
-        beat_schedule={
-            "heartbeat-every-30-seconds": {
-                "task": "app.workers.tasks.heartbeat",
-                "schedule": 30.0,
-                "options": {"queue": default_queue},
-            }
-        },
+        # Scheduling
+        beat_schedule=beat_schedule,
     )
 
     return celery_app
