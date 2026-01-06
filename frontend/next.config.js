@@ -5,4 +5,7 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+<<<<<<< HEAD
 EOF
+=======
+>>>>>>> a4c430f (Fix frontend build and assets)
